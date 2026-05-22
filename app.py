@@ -8,6 +8,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Helper to get the Gspread client
 def get_gspread_client():
     json_creds = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
     creds_dict = json.loads(json_creds)
@@ -18,6 +19,8 @@ def get_gspread_client():
 @app.route('/', methods=['GET', 'POST'])
 def home():
     client = get_gspread_client()
+    
+    # 1. Fetch Transactions for Dashboard
     sheet = client.open('FFE FUND').worksheet('Data')
     data = sheet.get_all_records()
     
@@ -34,6 +37,7 @@ def home():
     total_given = df[df['TYPE'].str.lower().str.strip() == 'fund given']['AMOUNT'].sum()
     balance = total_collected - total_given
     
+    # 2. Fetch Member Dropdown Data
     member_sheet = client.open('FFE FUND').worksheet('Member_Data')
     member_df = pd.DataFrame(member_sheet.get_all_records())
     member_names = member_df['NAME'].dropna().unique().tolist()
@@ -71,6 +75,7 @@ def home():
         <div class="header-container">
             <img src="{{ url_for('static', filename='Ffe.png') }}" class="header-logo" alt="FFE Fund Logo">
         </div>
+
         <div class="dashboard-container">
             <h2 style="color: #2c3e50;">Overview</h2>
             <div class="stats-grid">
@@ -78,6 +83,7 @@ def home():
                 <div class="dashboard-box"><h4>Total Given</h4><p>{{ total_given }}</p></div>
                 <div class="dashboard-box balance-box"><h4>Balance</h4><p style="color: #27ae60;">{{ balance }}</p></div>
             </div>
+
             <div class="card">
                 <h3>Member Search</h3>
                 <form method="POST">
@@ -89,6 +95,7 @@ def home():
                     </select>
                 </form>
             </div>
+
             {% if member_details %}
             <div class="card">
                 <h3>Status for: {{ selected_member }}</h3>
@@ -102,6 +109,7 @@ def home():
                 </table>
             </div>
             {% endif %}
+
             <h3>Recent Transactions</h3>
             <table>
                 <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
