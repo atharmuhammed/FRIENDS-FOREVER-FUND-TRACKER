@@ -24,12 +24,8 @@ def home():
     sheet = client.open('FFE FUND').worksheet('Data')
     data = sheet.get_all_records()
     
-    display_data = []
-    for row in data:
-        new_row = row.copy()
-        if str(row.get('TYPE', '')).strip().lower() == 'collection':
-            new_row['AMOUNT'] = "<b>PAID</b>"
-        display_data.append(new_row)
+    # Removed the 'PAID' logic here so raw amounts are kept
+    display_data = data 
 
     df = pd.DataFrame(data)
     df['AMOUNT'] = pd.to_numeric(df['AMOUNT'], errors='coerce').fillna(0)
@@ -37,17 +33,16 @@ def home():
     total_given = df[df['TYPE'].str.lower().str.strip() == 'fund given']['AMOUNT'].sum()
     balance = total_collected - total_given
     
-    # 2. Fetch Member Dropdown Data (Manual Parsing to handle duplicate headers)
+    # 2. Fetch Member Dropdown Data
     member_sheet = client.open('FFE FUND').worksheet('Member_Data')
-    raw_data = member_sheet.get_all_values() # Returns list of lists
+    raw_data = member_sheet.get_all_values()
     
     member_names = []
     member_details = None
     selected_member = request.form.get('member_name')
     
     if len(raw_data) > 1:
-        headers = raw_data[0] # Use first row as headers
-        # Get list of unique member names from the 'NAME' column
+        headers = raw_data[0]
         try:
             name_idx = headers.index('NAME')
             member_names = [row[name_idx] for row in raw_data[1:] if row[name_idx]]
@@ -55,7 +50,6 @@ def home():
             name_idx = 0
             member_names = [row[0] for row in raw_data[1:] if row[0]]
 
-        # If a member is selected, find their row and zip with headers
         if selected_member:
             for row in raw_data[1:]:
                 if row[name_idx] == selected_member:
@@ -126,7 +120,7 @@ def home():
                 <tr>
                     <td>{{ row['DATE'] }}</td>
                     <td>{{ row['NAMES'] }}</td>
-                    <td>{{ row['AMOUNT'] | safe }}</td>
+                    <td>{{ row['AMOUNT'] }}</td>
                     <td>{{ row['TYPE'] }}</td>
                     <td>{{ row['REASON'] }}</td>
                 </tr>
