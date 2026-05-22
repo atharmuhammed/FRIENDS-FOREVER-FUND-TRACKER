@@ -18,12 +18,15 @@ def home():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
 
-    # Open the 'Data' tab in your sheet
+    # Connect to the 'Data' tab in your sheet
     sheet = client.open('FFE FUND').worksheet('Data')
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # Calculations
+    # --- CALCULATIONS ---
+    # Convert empty/string numbers to numeric for math
+    df['AMOUNT'] = pd.to_numeric(df['AMOUNT'], errors='coerce').fillna(0)
+    
     # 1. Total Collected (Collection + Kuri)
     total_collected = df[df['TYPE'].str.lower().isin(['collection', 'kuri'])]['AMOUNT'].sum()
     
@@ -39,18 +42,29 @@ def home():
     monthly_collection = df[(df['DATE'].dt.month == current_month) & 
                            (df['TYPE'].str.lower().isin(['collection', 'kuri']))]['AMOUNT'].sum()
 
-    # Dashboard HTML
+    # --- DASHBOARD HTML ---
     html_template = '''
-    <h1>FFE Fund Dashboard</h1>
-    <div style="font-size: 20px;">
+    <h1 style="color: #2c3e50;">FFE Fund Dashboard</h1>
+    <div style="font-family: sans-serif; line-height: 1.6;">
         <p><b>Total Collected:</b> {{ total_collected }}</p>
         <p><b>This Month's Collection:</b> {{ monthly_collection }}</p>
         <p><b>Total Given to Charity:</b> {{ total_given }}</p>
-        <p><b>Current Balance:</b> {{ balance }}</p>
+        <p style="font-size: 1.2em; color: green;"><b>Current Balance:</b> {{ balance }}</p>
     </div>
     <hr>
     <h3>Recent Transactions</h3>
-    <pre>{{ data }}</pre>
+    <table border="1">
+        <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row['DATE'] }}</td>
+            <td>{{ row['NAMES'] }}</td>
+            <td>{{ row['AMOUNT'] }}</td>
+            <td>{{ row['TYPE'] }}</td>
+            <td>{{ row['REASON'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
     '''
     
     return render_template_string(html_template, 
