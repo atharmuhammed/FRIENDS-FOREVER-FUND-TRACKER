@@ -10,7 +10,6 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    # Load credentials from environment variable
     json_creds = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
     creds_dict = json.loads(json_creds)
 
@@ -18,33 +17,32 @@ def home():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
 
-    # Connect to the 'Data' tab
     sheet = client.open('FFE FUND').worksheet('Data')
     data = sheet.get_all_records()
     
-    # --- PRIVACY TRANSFORMATION ---
-    # Create display_data where 'collection' is masked as 'PAID'
+    # --- FIXED PRIVACY TRANSFORMATION ---
     display_data = []
     for row in data:
         new_row = row.copy()
-        if str(row['TYPE']).lower() == 'collection':
+        # .strip() removes accidental spaces, .lower() makes it case-insensitive
+        t_type = str(row.get('TYPE', '')).strip().lower()
+        
+        if t_type == 'collection':
             new_row['AMOUNT'] = "<b>PAID</b>"
         display_data.append(new_row)
 
     df = pd.DataFrame(data)
-    # --- CALCULATIONS (using raw data for accuracy) ---
     df['AMOUNT'] = pd.to_numeric(df['AMOUNT'], errors='coerce').fillna(0)
     
-    total_collected = df[df['TYPE'].str.lower().isin(['collection', 'kuri'])]['AMOUNT'].sum()
-    total_given = df[df['TYPE'].str.lower() == 'fund given']['AMOUNT'].sum()
+    total_collected = df[df['TYPE'].str.lower().str.strip().isin(['collection', 'kuri'])]['AMOUNT'].sum()
+    total_given = df[df['TYPE'].str.lower().str.strip() == 'fund given']['AMOUNT'].sum()
     balance = total_collected - total_given
     
     df['DATE'] = pd.to_datetime(df['DATE'], format='%d-%m-%Y', errors='coerce')
     current_month = datetime.now().month
     monthly_collection = df[(df['DATE'].dt.month == current_month) & 
-                           (df['TYPE'].str.lower().isin(['collection', 'kuri']))]['AMOUNT'].sum()
+                           (df['TYPE'].str.lower().str.strip().isin(['collection', 'kuri']))]['AMOUNT'].sum()
 
-    # --- UPDATED DASHBOARD HTML ---
     html_template = '''
     <!DOCTYPE html>
     <html>
