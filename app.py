@@ -17,7 +17,8 @@ def home():
     client = gspread.authorize(creds)
 
     # Make sure this name matches your actual Google Sheet name
-    sheet = client.open('FRIENDS-FOREVER-COLLECTION').sheet1
+    sheet = client.open('FFE FUND').sheet1
+
     data = sheet.get_all_records()
 
     return render_template_string('<h1>Fund Tracker</h1><pre>{{ data }}</pre>', data=data)
