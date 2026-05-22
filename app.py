@@ -21,9 +21,18 @@ def home():
     # Connect to the 'Data' tab
     sheet = client.open('FFE FUND').worksheet('Data')
     data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    
+    # --- PRIVACY TRANSFORMATION ---
+    # Create display_data where 'collection' is masked as 'PAID'
+    display_data = []
+    for row in data:
+        new_row = row.copy()
+        if str(row['TYPE']).lower() == 'collection':
+            new_row['AMOUNT'] = "<b>PAID</b>"
+        display_data.append(new_row)
 
-    # --- CALCULATIONS ---
+    df = pd.DataFrame(data)
+    # --- CALCULATIONS (using raw data for accuracy) ---
     df['AMOUNT'] = pd.to_numeric(df['AMOUNT'], errors='coerce').fillna(0)
     
     total_collected = df[df['TYPE'].str.lower().isin(['collection', 'kuri'])]['AMOUNT'].sum()
@@ -35,7 +44,7 @@ def home():
     monthly_collection = df[(df['DATE'].dt.month == current_month) & 
                            (df['TYPE'].str.lower().isin(['collection', 'kuri']))]['AMOUNT'].sum()
 
-    # --- UPDATED DASHBOARD HTML WITH BOXES ---
+    # --- UPDATED DASHBOARD HTML ---
     html_template = '''
     <!DOCTYPE html>
     <html>
@@ -74,11 +83,11 @@ def home():
             <h3>Recent Transactions</h3>
             <table>
                 <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
-                {% for row in data %}
+                {% for row in display_data %}
                 <tr>
                     <td>{{ row['DATE'] }}</td>
                     <td>{{ row['NAMES'] }}</td>
-                    <td>{{ row['AMOUNT'] }}</td>
+                    <td>{{ row['AMOUNT'] | safe }}</td>
                     <td>{{ row['TYPE'] }}</td>
                     <td>{{ row['REASON'] }}</td>
                 </tr>
@@ -94,7 +103,7 @@ def home():
                                   monthly_collection=monthly_collection, 
                                   total_given=total_given, 
                                   balance=balance,
-                                  data=data)
+                                  display_data=display_data)
 
 if __name__ == '__main__':
     app.run()
