@@ -45,12 +45,14 @@ def home():
     # 2. Fetch Member Dropdown Data
     member_sheet = client.open('FFE FUND').worksheet('Member_Data')
     member_df = pd.DataFrame(member_sheet.get_all_records())
-    member_names = member_df['NAME'].tolist()
+    member_names = member_df['NAME'].dropna().unique().tolist()
 
     selected_member = request.form.get('member_name')
     member_details = None
     if selected_member:
-        member_details = member_df[member_df['NAME'] == selected_member].iloc[0].to_dict()
+        filtered = member_df[member_df['NAME'] == selected_member]
+        if not filtered.empty:
+            member_details = filtered.iloc[0].to_dict()
 
     html_template = '''
     <!DOCTYPE html>
@@ -94,50 +96,4 @@ def home():
                     <select name="member_name" onchange="this.form.submit()">
                         <option value="">-- Select Member --</option>
                         {% for name in member_names %}
-                        <option value="{{ name }}" {% if name == selected_member %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
-            </div>
-
-            {% if member_details %}
-            <div class="card">
-                <h3>Status for: {{ selected_member }}</h3>
-                <table>
-                    {% for month, status in member_details.items() if month != 'NAME' %}
-                    <tr><th>{{ month }}</th><td>{{ status }}</td></tr>
-                    {% endfor %}
-                </table>
-            </div>
-            {% endif %}
-
-            <h3>Recent Transactions</h3>
-            <table>
-                <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
-                {% for row in display_data %}
-                <tr>
-                    <td>{{ row['DATE'] }}</td>
-                    <td>{{ row['NAMES'] }}</td>
-                    <td>{{ row['AMOUNT'] | safe }}</td>
-                    <td>{{ row['TYPE'] }}</td>
-                    <td>{{ row['REASON'] }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </body>
-    </html>
-    '''
-    
-    return render_template_string(html_template, 
-                                  total_collected=total_collected, 
-                                  monthly_collection=monthly_collection, 
-                                  total_given=total_given, 
-                                  balance=balance,
-                                  display_data=display_data,
-                                  member_names=member_names,
-                                  selected_member=selected_member,
-                                  member_details=member_details)
-
-if __name__ == '__main__':
-    app.run()
+                        <option value="{{ name }}" {% if name == selected_member %}selected{%
