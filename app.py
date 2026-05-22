@@ -37,17 +37,30 @@ def home():
     total_given = df[df['TYPE'].str.lower().str.strip() == 'fund given']['AMOUNT'].sum()
     balance = total_collected - total_given
     
-    # 2. Fetch Member Dropdown Data
+    # 2. Fetch Member Dropdown Data (Manual Parsing to handle duplicate headers)
     member_sheet = client.open('FFE FUND').worksheet('Member_Data')
-    member_df = pd.DataFrame(member_sheet.get_all_records())
-    member_names = member_df['NAME'].dropna().unique().tolist()
-
-    selected_member = request.form.get('member_name')
+    raw_data = member_sheet.get_all_values() # Returns list of lists
+    
+    member_names = []
     member_details = None
-    if selected_member:
-        filtered = member_df[member_df['NAME'] == selected_member]
-        if not filtered.empty:
-            member_details = filtered.iloc[0].to_dict()
+    selected_member = request.form.get('member_name')
+    
+    if len(raw_data) > 1:
+        headers = raw_data[0] # Use first row as headers
+        # Get list of unique member names from the 'NAME' column
+        try:
+            name_idx = headers.index('NAME')
+            member_names = [row[name_idx] for row in raw_data[1:] if row[name_idx]]
+        except ValueError:
+            name_idx = 0
+            member_names = [row[0] for row in raw_data[1:] if row[0]]
+
+        # If a member is selected, find their row and zip with headers
+        if selected_member:
+            for row in raw_data[1:]:
+                if row[name_idx] == selected_member:
+                    member_details = dict(zip(headers, row))
+                    break
 
     html_template = '''
     <!DOCTYPE html>
@@ -75,7 +88,6 @@ def home():
         <div class="header-container">
             <img src="{{ url_for('static', filename='Ffe.png') }}" class="header-logo" alt="FFE Fund Logo">
         </div>
-
         <div class="dashboard-container">
             <h2 style="color: #2c3e50;">Overview</h2>
             <div class="stats-grid">
@@ -83,7 +95,6 @@ def home():
                 <div class="dashboard-box"><h4>Total Given</h4><p>{{ total_given }}</p></div>
                 <div class="dashboard-box balance-box"><h4>Balance</h4><p style="color: #27ae60;">{{ balance }}</p></div>
             </div>
-
             <div class="card">
                 <h3>Member Search</h3>
                 <form method="POST">
@@ -95,21 +106,19 @@ def home():
                     </select>
                 </form>
             </div>
-
             {% if member_details %}
             <div class="card">
                 <h3>Status for: {{ selected_member }}</h3>
                 <table>
-                    {% for month, status in member_details.items() if month != 'NAME' %}
+                    {% for key, val in member_details.items() if key != 'NAME' %}
                     <tr>
-                        <th>{{ month }}</th>
-                        <td style="{{ 'color: red; font-weight: bold;' if 'NOT' in (status|string).upper() else '' }}">{{ status }}</td>
+                        <th>{{ key }}</th>
+                        <td style="{{ 'color: red; font-weight: bold;' if 'NOT' in (val|string).upper() else '' }}">{{ val }}</td>
                     </tr>
                     {% endfor %}
                 </table>
             </div>
             {% endif %}
-
             <h3>Recent Transactions</h3>
             <table>
                 <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
