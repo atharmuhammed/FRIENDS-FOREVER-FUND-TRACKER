@@ -80,6 +80,14 @@ def home():
         </div>
 
         <div class="dashboard-container">
+            <h2 style="color: #2c3e50;">Overview</h2>
+            <div class="stats-grid">
+                <div class="dashboard-box"><h4>Total Collected</h4><p>{{ total_collected }}</p></div>
+                <div class="dashboard-box"><h4>Monthly</h4><p>{{ monthly_collection }}</p></div>
+                <div class="dashboard-box"><h4>Total Given</h4><p>{{ total_given }}</p></div>
+                <div class="dashboard-box balance-box"><h4>Balance</h4><p style="color: #27ae60;">{{ balance }}</p></div>
+            </div>
+
             <div class="card">
                 <h3>Member Search</h3>
                 <form method="POST">
@@ -102,14 +110,6 @@ def home():
                 </table>
             </div>
             {% endif %}
-
-            <h2 style="color: #2c3e50;">Overview</h2>
-            <div class="stats-grid">
-                <div class="dashboard-box"><h4>Total Collected</h4><p>{{ total_collected }}</p></div>
-                <div class="dashboard-box"><h4>Monthly</h4><p>{{ monthly_collection }}</p></div>
-                <div class="dashboard-box"><h4>Total Given</h4><p>{{ total_given }}</p></div>
-                <div class="dashboard-box balance-box"><h4>Balance</h4><p style="color: #27ae60;">{{ balance }}</p></div>
-            </div>
 
             <h3>Recent Transactions</h3>
             <table>
