@@ -43,29 +43,47 @@ def home():
                            (df['TYPE'].str.lower().isin(['collection', 'kuri']))]['AMOUNT'].sum()
 
     # --- DASHBOARD HTML ---
+    # Replace your current html_template inside the 'home' function with this:
+
     html_template = '''
-    <h1 style="color: #2c3e50;">FFE Fund Dashboard</h1>
-    <div style="font-family: sans-serif; line-height: 1.6;">
-        <p><b>Total Collected:</b> {{ total_collected }}</p>
-        <p><b>This Month's Collection:</b> {{ monthly_collection }}</p>
-        <p><b>Total Given to Charity:</b> {{ total_given }}</p>
-        <p style="font-size: 1.2em; color: green;"><b>Current Balance:</b> {{ balance }}</p>
+    <style>
+        .header-logo {
+            width: 100%;        /* Stretches to full width */
+            height: auto;       /* Maintains aspect ratio */
+            display: block;
+            margin-bottom: 20px;
+        }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        .dashboard-container { padding: 20px; }
+    </style>
+
+    <img src="{{ url_for('static', filename='Ffe.png') }}" class="header-logo" alt="FFE Fund Logo">
+
+    <div class="dashboard-container">
+        <h1 style="color: #2c3e50;">FFE Fund Dashboard</h1>
+        <div style="font-size: 20px;">
+            <p><b>Total Collected:</b> {{ total_collected }}</p>
+            <p><b>This Month's Collection:</b> {{ monthly_collection }}</p>
+            <p><b>Total Given to Charity:</b> {{ total_given }}</p>
+            <p style="font-size: 1.2em; color: green;"><b>Current Balance:</b> {{ balance }}</p>
+        </div>
+        <hr>
+        <h3>Recent Transactions</h3>
+        <table border="1">
+            <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
+            {% for row in data %}
+            <tr>
+                <td>{{ row['DATE'] }}</td>
+                <td>{{ row['NAMES'] }}</td>
+                <td>{{ row['AMOUNT'] }}</td>
+                <td>{{ row['TYPE'] }}</td>
+                <td>{{ row['REASON'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-    <hr>
-    <h3>Recent Transactions</h3>
-    <table border="1">
-        <tr><th>Date</th><th>Name</th><th>Amount</th><th>Type</th><th>Reason</th></tr>
-        {% for row in data %}
-        <tr>
-            <td>{{ row['DATE'] }}</td>
-            <td>{{ row['NAMES'] }}</td>
-            <td>{{ row['AMOUNT'] }}</td>
-            <td>{{ row['TYPE'] }}</td>
-            <td>{{ row['REASON'] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
     '''
+
     
     return render_template_string(html_template, 
                                   total_collected=total_collected, 
