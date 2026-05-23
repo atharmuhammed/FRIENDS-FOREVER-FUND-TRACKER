@@ -64,7 +64,8 @@ def home():
         <style>
             body { margin: 0; padding: 0; font-family: sans-serif; background-color: #f4f7f6; }
             .header-container { width: 100%; display: block; text-align: center; background: white; }
-            .header-logo { width: 100%; height: auto; display: block; }
+            /* FIXED: Added max-width to prevent logo from stretching on large screens */
+            .header-logo { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto; }
             .dashboard-container { padding: 20px; }
             .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
             .dashboard-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
